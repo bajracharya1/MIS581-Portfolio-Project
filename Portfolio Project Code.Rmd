@@ -1,0 +1,99 @@
+---
+title: "MIS581-Portfolio Project Code"
+author: "Prakash Bajracharya"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+# Section -  Data exploration
+
+
+```{r data exploration}
+# Loading necessary library
+
+library(dplyr)
+library(ggplot2)
+
+#Dataset Statistical Summary
+
+## Loading banking data into data frame
+
+bank_df <- read.csv("F:/LearningStuff/CSUGLOBAL/MIS-581/bank-additional-full.csv")
+
+## Viewing all data in the data frame
+View (bank_df)
+
+## Displaying the structure
+str(bank_df)
+
+## Statistical Summary for all the attributes in the data frame
+summary(bank_df)
+
+## First 6 (default) rows of the data frame
+head(bank_df)
+
+## Getting dimension of the data frame
+dim(bank_df)
+
+## attributes name in data frame
+names(bank_df)
+
+## Calculate additional descriptive statistics for numerical data
+bank_df %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd, median = median)))
+### data frame with 0 columns and 1 row
+## Count frequencies of categorical data
+bank_df %>%
+  summarise(across(where(is.factor), ~table(.)))
+### data frame with 0 columns and 1 row
+
+
+# Hypothesis Testing
+
+## Converting columns to factor for proper statistical analysis and visualization
+bank_df$contact <- as.factor(bank_df$contact)
+bank_df$y <- as.factor(bank_df$y)
+bank_df$age <- as.numeric(bank_df$age)
+
+## Hypothesis 1: Method of contact
+contact_effect <- table(bank_df$contact, bank_df$y)
+contact_test <- chisq.test(contact_effect)
+contact_test
+
+## Plotting the results
+ggplot(bank_df, aes(x = contact, fill = y)) +
+  geom_bar(position = 'fill') +
+  labs(title = 'Subscription Rate by Contact Method', y = 'Proportion', x = 'Contact Method')
+
+
+## Hypothesis 2: Age effect
+age_groups <- bank_df %>%
+  mutate(age_group = cut(age, breaks = c(18, 35, 60, 100), labels = c('18-35', '36-60', '60+'))) %>%
+  group_by(age_group, y) %>%
+  summarise(count = n()) %>%
+  ungroup()
+
+age_effect <- chisq.test(table(age_groups$age_group, age_groups$y))
+age_effect
+
+## Plotting the results
+ggplot(age_groups, aes(x = age_group, y = count, fill = y)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(title = 'Subscription Rate by Age Group', y = 'Count', x = 'Age Group')
+
+
+## Hypothesis 3: Previous engagement
+bank_df$previous <- as.factor(ifelse(bank_df$previous > 0, 'yes', 'no'))
+previous_effect <- table(bank_df$previous, bank_df$y)
+previous_test <- chisq.test(previous_effect)
+previous_test
+
+## Plotting the results
+ggplot(bank_df, aes(x = previous, fill = y)) +
+  geom_bar(position = 'fill') +
+  labs(title = 'Subscription Rate by Previous Engagement', y = 'Proportion', x = 'Previous Engagement')
+
+
